@@ -44,7 +44,16 @@ func Run(ctx context.Context, args []string) ([]byte, error) {
 	}
 
 	if ctx != nil {
-		out, err := exec.CommandContext(ctx, tool, args...).Output()
+		uid := ContextUnixUID(ctx)
+
+		cmd := exec.CommandContext(ctx, tool, args...)
+		if uid != nil {
+			cmd.SysProcAttr = &syscall.SysProcAttr{
+				Credential: &syscall.Credential{Gid: *uid, Uid: *uid},
+			}
+		}
+
+		out, err := cmd.Output()
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}

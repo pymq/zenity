@@ -88,6 +88,8 @@ type options struct {
 	noCancel      bool
 	timeRemaining bool
 
+	unixUID *uint32
+
 	// Context for timeout
 	ctx context.Context
 }
@@ -106,7 +108,21 @@ func applyOptions(options []Option) (res options) {
 	for _, o := range options {
 		o.apply(&res)
 	}
+
+	if res.unixUID != nil {
+		ctx := res.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		res.ctx = zenutil.WithUnixUID(ctx, *res.unixUID)
+	}
+
 	return
+}
+
+// UnixUID returns an Option to set unix UID to run cli applications with. It is necessary to use zenity under root.
+func UnixUID(uid uint32) Option {
+	return funcOption(func(o *options) { o.unixUID = &uid })
 }
 
 // Title returns an Option to set the dialog title.
